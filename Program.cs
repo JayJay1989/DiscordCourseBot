@@ -44,26 +44,9 @@ namespace DiscordBot
             _client.Log += LogAsync;
             _client.Ready += ReadyAsync;
             _client.MessageReceived += MessageReceivedAsync;
-            _timer = new Timer {AutoReset = false, Interval = GetInterval()};
+            _timer = new Timer {AutoReset = false, Interval = GetInterval(_cnf.minutesToRefresh)};
             _timer.Elapsed += Timer_Elapsed;
             _timer.Start();
-        }
-
-        /// <summary>
-        /// Console On Cancel Key Press Task (CTRL+C)
-        /// </summary>
-        /// <returns>-</returns>
-        private async Task ConsoleOnCancelKeyPress()
-        {
-            _timer.Stop();
-            foreach (Message message in _messages)
-            {
-                await Task.Run(() => DeletedMessageTask(message.ThisMessage));
-            }
-            foreach (Message message in _messagesToRemove)
-            {
-                await Task.Run(() => DeletedMessageTask(message.ThisMessage));
-            }
         }
 
         /// <summary>
@@ -139,10 +122,10 @@ namespace DiscordBot
         /// The interval
         /// </summary>
         /// <returns></returns>
-        static double GetInterval()
+        static double GetInterval(int interval)
         {
             DateTime now = DateTime.Now;
-            return ((60 - now.Second) * (1000 * _cnf.minutesToRefresh) - now.Millisecond); //every minute
+            return ((60 - now.Second) * (1000 * interval) - now.Millisecond); //every minute
         }
 
         /// <summary>
@@ -243,15 +226,14 @@ namespace DiscordBot
         /// <returns><see cref="Task"/></returns>
         public async Task MainAsync()
         {
-            ConsoleKeyInfo cki;
+            string cki;
             await _client.LoginAsync(TokenType.Bot, _cnf.bot.token);
             await _client.StartAsync();
             while (true)
             {
-                cki = Console.ReadKey(true);
-                if (cki.Key == ConsoleKey.X)
+                cki = Console.ReadLine();
+                if (cki.ToLower().Equals("stop"))
                 {
-                    await ConsoleOnCancelKeyPress();
                     await _client.StopAsync();
                     break;
                 }
