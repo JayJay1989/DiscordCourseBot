@@ -6,18 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="timetable.json" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.1.1" />
+    <PackageReference Include="Ical.Net" Version="4.1.11" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="timetable.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
+    <Folder Include="Entities\" />
   </ItemGroup>
 
 </Project>

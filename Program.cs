@@ -32,10 +32,9 @@ namespace DiscordBot
 
             _messages = new List<Message>();
             _messagesToRemove = new List<Message>();
-            _timeTables = new List<TimeTable>();
+            ICSConverter ics = new ICSConverter();
 
-            _timeTables = JsonConvert.DeserializeObject<List<TimeTable>>(
-                    File.ReadAllText($"{Environment.CurrentDirectory}\\timetable.json"));
+            _timeTables = ics.GetTables();
 
             _cnf = JsonConvert.DeserializeObject<Config>(
                     File.ReadAllText($"{Environment.CurrentDirectory}\\config.json"));
@@ -108,17 +107,6 @@ namespace DiscordBot
         }
 
         /// <summary>
-        /// Delete Message
-        /// </summary>
-        /// <param name="messageParam">The original message <see cref="RestUserMessage"/></param>
-        /// <returns></returns>
-        private async Task DeletedMessageTask(RestUserMessage messageParam)
-        {
-            if (messageParam == null) return;
-            await messageParam.DeleteAsync();
-        }
-
-        /// <summary>
         /// The interval
         /// </summary>
         /// <returns></returns>
@@ -139,6 +127,7 @@ namespace DiscordBot
             _messagesToRemove.Add(new Message(rMessage));
             if (rMessage.Content == "!monitor" && !rMessage.Author.IsBot)
             {
+                await rMessage.DeleteAsync();
                 var test = await messageParam.Channel.SendMessageAsync(embed:Calculate());
                 if (!DoesItExist(test))
                 {
