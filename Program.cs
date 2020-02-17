@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord;
+using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
+using DiscordBot.Commands;
 using DiscordBot.Messages;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DiscordBot
 {
@@ -17,33 +20,31 @@ namespace DiscordBot
     /// </summary>
     class Program
     {
-        private readonly DiscordSocketClient _client;
+        private DiscordSocketClient _client;
         private List<Message> _messages;
         private List<Message> _messagesToRemove;
         private List<TimeTable> _timeTables;
-        private Config _cnf;
+        private IConfiguration _config;
         static Timer _timer;
+        public static Program ThisProgram;
 
         /// <summary>
         /// Constructor
         /// </summary>
         public Program()
         {
-
+            ThisProgram=this;
             _messages = new List<Message>();
             _messagesToRemove = new List<Message>();
             ICSConverter ics = new ICSConverter();
 
             _timeTables = ics.GetTables();
+            var _builder = new ConfigurationBuilder()
+                .SetBasePath(Environment.CurrentDirectory)
+                .AddJsonFile(path: "config.json");
+            _config = _builder.Build();
 
-            _cnf = JsonConvert.DeserializeObject<Config>(
-                    File.ReadAllText($"{Environment.CurrentDirectory}/config.json"));
-
-            _client = new DiscordSocketClient();
-            _client.Log += LogAsync;
-            _client.Ready += ReadyAsync;
-            _client.MessageReceived += MessageReceivedAsync;
-            _timer = new Timer {AutoReset = false, Interval = GetInterval(_cnf.minutesToRefresh)};
+            _timer = new Timer {AutoReset = false, Interval = GetInterval(int.Parse(_config["minutesToRefresh"])) };
             _timer.Elapsed += Timer_Elapsed;
             _timer.Start();
         }
@@ -60,7 +61,7 @@ namespace DiscordBot
                 {
                     Task.Run(() => EditMessageTask(message.ThisMessage));
                 }
-            _timer.Interval = GetInterval(_cnf.minutesToRefresh);
+            _timer.Interval = GetInterval(int.Parse(_config["minutesToRefresh"]));
             _timer.Start();
         }
 
@@ -182,6 +183,26 @@ namespace DiscordBot
             return _timeTables.First(tt => tt.Time.StartTime > DateTime.Now);
         }
 
+
+        public IEnumerable<TimeTable> GetWeekTable(string weeknumber = null)
+        {
+            int WeekNumber = (weeknumber == null) ? GetWeekNumber(DateTime.Now) : int.Parse(weeknumber);
+            List<TimeTable> ret = new List<TimeTable>();
+            foreach (TimeTable timeTable in _timeTables)
+            {
+                if(GetWeekNumber(timeTable.Day.Date).Equals(WeekNumber)) ret.Add(timeTable);
+            }
+            return ret;
+        }
+        
+        public int GetWeekNumber(DateTime date)
+        {
+            CultureInfo ciCurr = CultureInfo.CurrentCulture;
+            int weekNum = ciCurr.Calendar.GetWeekOfYear(date,
+                CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            return weekNum;
+        }
+
         /// <summary>
         /// Ready
         /// </summary>
@@ -215,9 +236,21 @@ namespace DiscordBot
         /// <returns><see cref="Task"/></returns>
         public async Task MainAsync()
         {
+            
+            using (var services = ConfigureServices())
+            {
+                var client = services.GetRequiredService<DiscordSocketClient>();
+                _client = client;
+                client.Log += LogAsync;
+                client.Ready += ReadyAsync;
+                client.MessageReceived += MessageReceivedAsync;
+                services.GetRequiredService<CommandService>().Log += LogAsync;
+                await client.LoginAsync(TokenType.Bot, _config["Token"]);
+                await client.StartAsync();
+                await services.GetRequiredService<CommandHandler>().InitializeAsync();
+                await Task.Delay(-1);
+            }
             string cki;
-            await _client.LoginAsync(TokenType.Bot, _cnf.bot.token);
-            await _client.StartAsync();
             while (true)
             {
                 cki = Console.ReadLine();
@@ -227,7 +260,20 @@ namespace DiscordBot
                     break;
                 }
             }
-            await Task.Delay(-1);
+        }
+
+        private ServiceProvider ConfigureServices()
+        {
+            // this returns a ServiceProvider that is used later to call for those services
+            // we can add types we have access to here, hence adding the new using statement:
+            // using csharpi.Services;
+            // the config we build is also added, which comes in handy for setting the command prefix!
+            return new ServiceCollection()
+                .AddSingleton(_config)
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton<CommandService>()
+                .AddSingleton<CommandHandler>()
+                .BuildServiceProvider();
         }
 
         /// <summary>
