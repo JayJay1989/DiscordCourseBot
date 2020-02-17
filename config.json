@@ -1,5 +1,6 @@
 ﻿{
+  "minutesToRefresh":  1, 
   "bot": {
-    "token":  "" 
-  }  
+    "token": ""
+  }
 }

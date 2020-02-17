@@ -142,7 +142,7 @@ namespace DiscordBot
         static double GetInterval()
         {
             DateTime now = DateTime.Now;
-            return ((60 - now.Second) * 1000 - now.Millisecond); //every minute
+            return ((60 - now.Second) * (1000 * _cnf.minutesToRefresh) - now.Millisecond); //every minute
         }
 
         /// <summary>
