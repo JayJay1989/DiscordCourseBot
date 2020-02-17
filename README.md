@@ -1,0 +1,2 @@
+# DiscordCourseBot
+Discord Course bot
