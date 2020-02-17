@@ -1,0 +1,82 @@
+﻿[
+  {
+    "day": "2020-02-17T00:00:00",
+    "subject": "Programming Expert",
+    "classRoom": "BST.K.1.012",
+    "teacher": "Deboosere Dries",
+    "time": {
+      "startTime": "2020-02-17T07:30:00",
+      "endTime": "2020-02-17T11:00:00"
+    }
+  },
+  {
+    "day": "2020-02-19T00:00:00",
+    "subject": "Web Frontend Advanced",
+    "classRoom": "BST.K.1.016",
+    "teacher": "Soete Bart",
+    "time": {
+      "startTime": "2020-02-19T12:00:00",
+      "endTime": "2020-02-19T15:30:00"
+    }
+  },
+  {
+    "day": "2020-02-20T00:00:00",
+    "subject": "Web Backend",
+    "classRoom": "BST.K.1.012",
+    "teacher": "François Joachim",
+    "time": {
+      "startTime": "2020-02-20T07:30:00",
+      "endTime": "2020-02-20T11:00:00"
+    }
+  },
+  {
+    "day": "2020-02-20T00:00:00",
+    "subject": "Web Backend",
+    "classRoom": "BST.K.1.012",
+    "teacher": "François Joachim",
+    "time": {
+      "startTime": "2020-02-20T12:00:00",
+      "endTime": "2020-02-20T15:30:00"
+    }
+  },
+  {
+    "day": "2020-02-24T00:00:00",
+    "subject": "Programming Expert",
+    "classRoom": "BST.K.1.012",
+    "teacher": "Deboosere Dries",
+    "time": {
+      "startTime": "2020-02-24T07:30:00",
+      "endTime": "2020-02-24T11:00:00"
+    }
+  },
+  {
+    "day": "2020-02-24T00:00:00",
+    "subject": "Continious Integration Advanced",
+    "classRoom": "BST.K.1.012",
+    "teacher": "Deboosere Dries",
+    "time": {
+      "startTime": "2020-02-24T12:00:00",
+      "endTime": "2020-02-24T15:30:00"
+    }
+  },
+  {
+    "day": "2020-02-26T00:00:00",
+    "subject": "Web Frontend Advanced",
+    "classRoom": "BST.K.1.016",
+    "teacher": "Soete Bart",
+    "time": {
+      "startTime": "2020-02-26T12:00:00",
+      "endTime": "2020-02-26T15:30:00"
+    }
+  },
+  {
+    "day": "2020-02-27T00:00:00",
+    "subject": "Web Backend",
+    "classRoom": "BST.K.1.012",
+    "teacher": "François Joachim",
+    "time": {
+      "startTime": "2020-02-27T07:30:00",
+      "endTime": "2020-02-27T11:00:00"
+    }
+  }
+]
