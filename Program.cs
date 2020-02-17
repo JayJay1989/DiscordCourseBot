@@ -61,7 +61,7 @@ namespace DiscordBot
                 {
                     Task.Run(() => EditMessageTask(message.ThisMessage));
                 }
-            _timer.Interval = GetInterval();
+            _timer.Interval = GetInterval(_cnf.minutesToRefresh);
             _timer.Start();
         }
 
