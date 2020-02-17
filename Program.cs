@@ -172,12 +172,10 @@ namespace DiscordBot
         private Embed CreateEmbed(TimeTable timeTable)
         {
                 return new EmbedBuilder()
-                .AddField("Teacher", timeTable.Teacher, true)
-                .AddField("Class Room", timeTable.ClassRoom, true)
-                .AddField("","", true)
+                .AddField("Teacher", timeTable.Teacher)
+                .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime.Hour}:{timeTable.Time.StartTime.Minute:00}", true)
                 .AddField("End", $"{timeTable.Time.EndTime.Hour}:{timeTable.Time.EndTime.Minute::00}", true)
-                .AddField("","", true)
                 .WithColor(Color.Green)
                 .WithTitle(timeTable.Subject)
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -192,10 +190,9 @@ namespace DiscordBot
         {
             TimeTable nextCourse = NextCourse();
             return new EmbedBuilder()
-                .AddField("Next Course", nextCourse.Subject, true)
-                .AddField("Class room", nextCourse.ClassRoom, true)
-                .AddField("","", true)
-                .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}", true)
+                .AddField("Next Course", nextCourse.Subject)
+                .AddField("Class room", nextCourse.ClassRoom)
+                .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}")
                 .AddField("Start", $"{nextCourse.Time.StartTime.Hour}:{nextCourse.Time.StartTime.Minute:00}", true)
                 .AddField("End", $"{nextCourse.Time.EndTime.Hour}:{nextCourse.Time.EndTime.Minute:00}", true)
                 .WithColor(Color.Red)
