@@ -13,7 +13,7 @@ namespace DiscordBot
         public ICSConverter()
         {
             timetable = new List<TimeTable>();
-            Calendar callenderCollection = Calendar.Load(File.ReadAllText($"{Environment.CurrentDirectory}//calendar.ics"));
+            Calendar callenderCollection = Calendar.Load(File.ReadAllText($"{Environment.CurrentDirectory}/calendar.ics"));
 
             foreach (CalendarEvent calendar in callenderCollection.Events)
             {

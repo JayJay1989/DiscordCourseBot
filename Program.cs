@@ -37,7 +37,7 @@ namespace DiscordBot
             _timeTables = ics.GetTables();
 
             _cnf = JsonConvert.DeserializeObject<Config>(
-                    File.ReadAllText($"{Environment.CurrentDirectory}\\config.json"));
+                    File.ReadAllText($"{Environment.CurrentDirectory}/config.json"));
 
             _client = new DiscordSocketClient();
             _client.Log += LogAsync;
