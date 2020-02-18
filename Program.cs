@@ -25,9 +25,11 @@ namespace DiscordBot
         private List<Message> _messages;
         private List<TimeTable> _timeTables;
         private List<Tasks> _taskList;
+        private List<Tasks> _tasklistOld;
         private IConfiguration _config;
         static Timer _timer;
         public static Program ThisProgram;
+        private int taskCount = 0;
 
         /// <summary>
         /// Constructor
@@ -58,14 +60,34 @@ namespace DiscordBot
         {
             if(_messages.Count > 0)
                 foreach (Message message in _messages)
-                {
                     Task.Run(() => EditMessageTask(message.ThisMessage));
-                }
+
             _taskList = new ICSDownloader().GetTaskList();
+            
+            int countTasks = GetOnlyNewTasks().Count;
+            if (taskCount == 0)
+            {
+                taskCount = countTasks;
+                _tasklistOld = _taskList;
+            }
+            else if (countTasks > taskCount)
+            {
+                Tasks result = _taskList.GetLatestTask(_tasklistOld);
+                Task.Run(() => SendMessageToChannelAsync(result));
+                taskCount = countTasks;
+                _tasklistOld = _taskList;
+            }
+
             int count = GetTasksSevenDays().Count;
             if (count > 0) SetBotTitle($"{count} {(count > 1 ? "taken" : "taak")} deze week");
             _timer.Interval = GetInterval(int.Parse(_config["minutesToRefresh"]));
             _timer.Start();
+        }
+
+        private async Task SendMessageToChannelAsync(Tasks task)
+        {
+            var channel = _client.GetChannel(678954369764425728) as SocketTextChannel;
+            await channel.SendMessageAsync($"@here Nieuwe taak!! [{task.Course}] {task.Title} indienen op {task.EndTime:dd-MM-yyyy HH:mm}");
         }
 
         /// <summary>
@@ -141,7 +163,7 @@ namespace DiscordBot
 
             if (rMessage.Content == "!lesrooster")
             {
-                await rMessage.DeleteAsync();
+                //await rMessage.DeleteAsync();
                 await messageParam.Channel.SendMessageAsync(embed: Calculate());
             }
         }
@@ -153,13 +175,12 @@ namespace DiscordBot
         /// <returns>Embed</returns>
         private Embed CreateEmbed(TimeTable timeTable)
         {
-            List<Tasks> tasklist = GetTasksSevenDays();
             return new EmbedBuilder()
                 .AddField("Teacher", timeTable.Teacher)
                 .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime.Hour}:{timeTable.Time.StartTime.Minute:00}", true)
                 .AddField("End", $"{timeTable.Time.EndTime.Hour}:{timeTable.Time.EndTime.Minute::00}", true)
-                .AddField("Tasks:", $"```\n{tasklist.ShowAll()}\n```")
+                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll()}\n```")
                 .WithColor(Color.Green)
                 .WithTitle($"Nu: {timeTable.Subject}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -173,14 +194,13 @@ namespace DiscordBot
         private Embed CreateBlankEmbed()
         {
             TimeTable nextCourse = NextCourse();
-            List<Tasks> tasklist = GetTasksSevenDays();
             return new EmbedBuilder()
                 .AddField("Next Course", nextCourse.Subject)
                 .AddField("Class room", nextCourse.ClassRoom)
                 .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}")
                 .AddField("Start", $"{nextCourse.Time.StartTime.Hour}:{nextCourse.Time.StartTime.Minute:00}", true)
                 .AddField("End", $"{nextCourse.Time.EndTime.Hour}:{nextCourse.Time.EndTime.Minute:00}", true)
-                .AddField("Tasks:", $"```\n{tasklist.ShowAll()}\n```")
+                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll()}\n```")
                 .WithColor(Color.Red)
                 .WithTitle("Nu: Geen Les")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -229,6 +249,13 @@ namespace DiscordBot
         {
             List<Tasks> ret = new List<Tasks>();
             ret = _taskList.FindAll(t => t.EndTime <= DateTime.Today.AddDays(7) && t.EndTime >= DateTime.Today);
+            return ret;
+        }
+
+        private List<Tasks> GetOnlyNewTasks()
+        {
+            List<Tasks> ret = new List<Tasks>();
+            ret = _taskList.FindAll(t => t.EndTime >= DateTime.Today);
             return ret;
         }
 

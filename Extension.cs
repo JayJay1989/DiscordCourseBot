@@ -61,5 +61,10 @@ namespace DiscordBot
             if (!taskList.Any()) stringBuilder.Append("No tasks");
             return stringBuilder.ToString();
         }
+
+        public static Tasks GetLatestTask(this List<Tasks> newList, List<Tasks> oldList)
+        {
+            return newList.Where(tasks => !oldList.Contains(tasks)).First();
+        }
     }
 }

@@ -35,7 +35,7 @@ namespace DiscordBot
         private string GetSummary(string haystack, int i)
         {
             string[] splitted = haystack.Replace("]", "").Split(" [");
-            return splitted[i];
+            return splitted.Length < i+1 ? "" : splitted[i];
         }
     }
 }
