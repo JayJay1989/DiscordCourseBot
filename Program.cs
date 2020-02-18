@@ -9,7 +9,8 @@ using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
 using DiscordBot.Commands;
-using DiscordBot.Messages;
+using DiscordBot.Models;
+using DiscordBot.Models.Messages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

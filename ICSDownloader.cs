@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DiscordBot.Models;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Microsoft.Extensions.Configuration;

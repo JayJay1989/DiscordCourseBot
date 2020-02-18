@@ -1,6 +1,6 @@
 ﻿using Discord.Rest;
 
-namespace DiscordBot.Messages
+namespace DiscordBot.Models.Messages
 {
     public class Message
     {

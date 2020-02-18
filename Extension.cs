@@ -4,12 +4,19 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using DiscordBot.Models;
 using Ical.Net;
 
 namespace DiscordBot
 {
     public static class Extension
     {
+        /// <summary>
+        /// Async method to load ical calendar from feed
+        /// </summary>
+        /// <param name="calendar"></param>
+        /// <param name="uri">the url</param>
+        /// <returns><seealso cref="Calendar"/>Calendar</returns>
         public static async Task<Calendar> LoadFromUriAsync(this Calendar calendar, Uri uri)
         {
             using (var client = new HttpClient())
@@ -21,6 +28,12 @@ namespace DiscordBot
             }
         }
 
+        /// <summary>
+        /// method to load ical calendar from feed
+        /// </summary>
+        /// <param name="calendar"></param>
+        /// <param name="uri">the url</param>
+        /// <returns><seealso cref="Calendar"/>Calendar</returns>
         public static Calendar LoadFromUri(this Calendar calendar, Uri uri)
         {
             using (var client = new HttpClient())
@@ -32,6 +45,11 @@ namespace DiscordBot
             }
         }
 
+        /// <summary>
+        /// Method to create a list of tasks
+        /// </summary>
+        /// <param name="taskList"></param>
+        /// <returns></returns>
         public static string ShowAll(this List<Tasks> taskList)
         {
             StringBuilder stringBuilder = new StringBuilder();
