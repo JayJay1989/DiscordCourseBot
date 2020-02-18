@@ -22,7 +22,6 @@ namespace DiscordBot
     {
         private DiscordSocketClient _client;
         private List<Message> _messages;
-        private List<Message> _messagesToRemove;
         private List<TimeTable> _timeTables;
         private List<Tasks> _taskList;
         private IConfiguration _config;
@@ -36,7 +35,6 @@ namespace DiscordBot
         {
             ThisProgram=this;
             _messages = new List<Message>();
-            _messagesToRemove = new List<Message>();
             var _builder = new ConfigurationBuilder()
                 .SetBasePath(Environment.CurrentDirectory)
                 .AddJsonFile(path: "config.json");
@@ -128,8 +126,8 @@ namespace DiscordBot
         private async Task MessageReceivedAsync(SocketMessage messageParam)
         {
             var rMessage = (RestUserMessage)await messageParam.Channel.GetMessageAsync(messageParam.Id);
-            _messagesToRemove.Add(new Message(rMessage));
-            if (rMessage.Content == "!monitor" && !rMessage.Author.IsBot)
+            
+            if (rMessage.Content == "!monitor" && !rMessage.Author.IsBot && rMessage.Author.Username.Contains("JayJay1989BE"))
             {
                 await rMessage.DeleteAsync();
                 var test = await messageParam.Channel.SendMessageAsync(embed:Calculate());
@@ -137,6 +135,12 @@ namespace DiscordBot
                 {
                     await AddMessage(test);
                 }
+            }
+
+            if (rMessage.Content == "!lesrooster")
+            {
+                await rMessage.DeleteAsync();
+                await messageParam.Channel.SendMessageAsync(embed: Calculate());
             }
         }
 
@@ -153,9 +157,9 @@ namespace DiscordBot
                 .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime.Hour}:{timeTable.Time.StartTime.Minute:00}", true)
                 .AddField("End", $"{timeTable.Time.EndTime.Hour}:{timeTable.Time.EndTime.Minute::00}", true)
+                .AddField("Tasks:", $"```\n{tasklist.ShowAll()}\n```")
                 .WithColor(Color.Green)
-                .WithTitle(timeTable.Subject)
-                .WithDescription($"{tasklist.ShowAll()}")
+                .WithTitle($"Nu: {timeTable.Subject}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
                 .Build();
         }
@@ -174,9 +178,9 @@ namespace DiscordBot
                 .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}")
                 .AddField("Start", $"{nextCourse.Time.StartTime.Hour}:{nextCourse.Time.StartTime.Minute:00}", true)
                 .AddField("End", $"{nextCourse.Time.EndTime.Hour}:{nextCourse.Time.EndTime.Minute:00}", true)
+                .AddField("Tasks:", $"```\n{tasklist.ShowAll()}\n```")
                 .WithColor(Color.Red)
-                .WithTitle("Geen Les")
-                .WithDescription($"{tasklist.ShowAll()}")
+                .WithTitle("Nu: Geen Les")
                 .WithFooter($"Last updated on: {DateTime.Now}")
                 .Build();
         }

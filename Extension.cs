@@ -34,10 +34,10 @@ namespace DiscordBot
 
         public static string ShowAll(this List<Tasks> taskList)
         {
-            StringBuilder stringBuilder = new StringBuilder("Tasks:\n\r");
+            StringBuilder stringBuilder = new StringBuilder();
             foreach (Tasks task in taskList)
             {
-                stringBuilder.Append($"[{task.Course}] {task.Title} tenlaatste {task.EndTime:dd/MM/yyy HH:mm}\r\n");
+                stringBuilder.Append($"- [{task.Course}] {task.Title} tenlaatste {task.EndTime:dd/MM/yyy HH:mm}\r\n");
             }
 
             if (!taskList.Any()) stringBuilder.Append("No tasks");
