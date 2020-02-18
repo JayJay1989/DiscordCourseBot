@@ -222,7 +222,7 @@ namespace DiscordBot
         private List<Tasks> GetTasksSevenDays()
         {
             List<Tasks> ret = new List<Tasks>();
-            ret = _taskList.FindAll(t => t.EndTime <= DateTime.Now.AddDays(7));
+            ret = _taskList.FindAll(t => t.EndTime <= DateTime.Today.AddDays(7) && t.EndTime >= DateTime.Today);
             return ret;
         }
 
