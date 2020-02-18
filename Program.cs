@@ -61,7 +61,8 @@ namespace DiscordBot
                     Task.Run(() => EditMessageTask(message.ThisMessage));
                 }
             _taskList = new ICSDownloader().GetTaskList();
-            if (GetTasksSevenDays().Count > 0) SetBotTitle($"{GetTasksSevenDays().Count} taken deze week");
+            int count = GetTasksSevenDays().Count;
+            if (count > 0) SetBotTitle($"{count} {(count > 1 ? "taken" : "taak")} deze week");
             _timer.Interval = GetInterval(int.Parse(_config["minutesToRefresh"]));
             _timer.Start();
         }
