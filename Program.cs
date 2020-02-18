@@ -24,6 +24,7 @@ namespace DiscordBot
         private List<Message> _messages;
         private List<Message> _messagesToRemove;
         private List<TimeTable> _timeTables;
+        private List<Tasks> _taskList;
         private IConfiguration _config;
         static Timer _timer;
         public static Program ThisProgram;
@@ -36,13 +37,13 @@ namespace DiscordBot
             ThisProgram=this;
             _messages = new List<Message>();
             _messagesToRemove = new List<Message>();
-            ICSConverter ics = new ICSConverter();
-
-            _timeTables = ics.GetTables();
             var _builder = new ConfigurationBuilder()
                 .SetBasePath(Environment.CurrentDirectory)
                 .AddJsonFile(path: "config.json");
             _config = _builder.Build();
+
+            _taskList = new ICSDownloader().GetTaskList();
+            _timeTables = new ICSConverter().GetTables();
 
             _timer = new Timer {AutoReset = false, Interval = GetInterval(int.Parse(_config["minutesToRefresh"])) };
             _timer.Elapsed += Timer_Elapsed;
@@ -61,6 +62,8 @@ namespace DiscordBot
                 {
                     Task.Run(() => EditMessageTask(message.ThisMessage));
                 }
+            _taskList = new ICSDownloader().GetTaskList();
+            if (GetTasksSevenDays().Count > 0) SetBotTitle($"{GetTasksSevenDays().Count} taken deze week");
             _timer.Interval = GetInterval(int.Parse(_config["minutesToRefresh"]));
             _timer.Start();
         }
@@ -144,13 +147,15 @@ namespace DiscordBot
         /// <returns>Embed</returns>
         private Embed CreateEmbed(TimeTable timeTable)
         {
-                return new EmbedBuilder()
+            List<Tasks> tasklist = GetTasksSevenDays();
+            return new EmbedBuilder()
                 .AddField("Teacher", timeTable.Teacher)
                 .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime.Hour}:{timeTable.Time.StartTime.Minute:00}", true)
                 .AddField("End", $"{timeTable.Time.EndTime.Hour}:{timeTable.Time.EndTime.Minute::00}", true)
                 .WithColor(Color.Green)
                 .WithTitle(timeTable.Subject)
+                .WithDescription($"{tasklist.ShowAll()}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
                 .Build();
         }
@@ -162,6 +167,7 @@ namespace DiscordBot
         private Embed CreateBlankEmbed()
         {
             TimeTable nextCourse = NextCourse();
+            List<Tasks> tasklist = GetTasksSevenDays();
             return new EmbedBuilder()
                 .AddField("Next Course", nextCourse.Subject)
                 .AddField("Class room", nextCourse.ClassRoom)
@@ -170,6 +176,7 @@ namespace DiscordBot
                 .AddField("End", $"{nextCourse.Time.EndTime.Hour}:{nextCourse.Time.EndTime.Minute:00}", true)
                 .WithColor(Color.Red)
                 .WithTitle("Geen Les")
+                .WithDescription($"{tasklist.ShowAll()}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
                 .Build();
         }
@@ -183,7 +190,11 @@ namespace DiscordBot
             return _timeTables.First(tt => tt.Time.StartTime > DateTime.Now);
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="weeknumber"></param>
+        /// <returns></returns>
         public IEnumerable<TimeTable> GetWeekTable(string weeknumber = null)
         {
             int WeekNumber = (weeknumber == null) ? GetWeekNumber(DateTime.Now) : int.Parse(weeknumber);
@@ -195,12 +206,24 @@ namespace DiscordBot
             return ret;
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
         public int GetWeekNumber(DateTime date)
         {
             CultureInfo ciCurr = CultureInfo.CurrentCulture;
             int weekNum = ciCurr.Calendar.GetWeekOfYear(date,
                 CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
             return weekNum;
+        }
+
+        private List<Tasks> GetTasksSevenDays()
+        {
+            List<Tasks> ret = new List<Tasks>();
+            ret = _taskList.FindAll(t => t.EndTime <= DateTime.Now.AddDays(7));
+            return ret;
         }
 
         /// <summary>
@@ -212,6 +235,11 @@ namespace DiscordBot
             Console.WriteLine($"{_client.CurrentUser} is connected!");
             _client.SetActivityAsync(new Game("Lessenrooster", ActivityType.Watching));
             return Task.CompletedTask;
+        }
+
+        private void SetBotTitle(string title)
+        {
+            _client.SetActivityAsync(new Game(title, ActivityType.Watching));
         }
 
         /// <summary>
@@ -299,6 +327,11 @@ namespace DiscordBot
         private bool DoesItExist(RestUserMessage message)
         {
             return _messages.Exists(message1 => message1.ThisMessage == message);
+        }
+
+        public IConfiguration GetConfig()
+        {
+            return _config;
         }
     }
 }
