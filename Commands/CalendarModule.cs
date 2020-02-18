@@ -27,11 +27,12 @@ namespace DiscordBot.Commands
                 }
                 else if (thisTimeTable.Count() == 1)
                 {
-                    newItem.Add(weekdays[i], thisTimeTable.First().Subject);
+                    newItem.Add(weekdays[i], $"{thisTimeTable.First().Subject} ({thisTimeTable.First().Time.StartTime:HH:mm}-{thisTimeTable.First().Time.EndTime:HH:mm})");
                 }
                 else
                 {
-                    newItem.Add(weekdays[i], thisTimeTable.First().Subject + " | " + thisTimeTable.Last().Subject);
+                    newItem.Add(weekdays[i], $"{thisTimeTable.First().Subject} ({thisTimeTable.First().Time.StartTime:HH:mm}-{thisTimeTable.First().Time.EndTime:HH:mm}) | " +
+                                             $"{thisTimeTable.Last().Subject} ({thisTimeTable.Last().Time.StartTime:HH:mm}-{thisTimeTable.Last().Time.EndTime:HH:mm})");
                 }
                 
             }
