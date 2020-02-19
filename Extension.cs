@@ -84,5 +84,17 @@ namespace DiscordBot
 
             return retList;
         }
+
+        /// <summary>
+        /// Discord AddField message cannot be longer than 1024 characters
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static string LimitMessage(this string message)
+        {
+            if (message.Length > 1000)
+                return message.Substring(0, 1000)+"...";
+            return message;
+        }
     }
 }

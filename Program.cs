@@ -124,7 +124,7 @@ namespace DiscordBot
             try
             {
                 ret = timeTables.Single(tt =>
-                    tt.Time.StartTime.Hour >= DateTime.Now.Hour && tt.Time.EndTime.Hour <= DateTime.Now.Hour);
+                    tt.Time.StartTime >= DateTime.Now && tt.Time.EndTime <= DateTime.Now);
             }
             catch (Exception e)
             {
@@ -180,7 +180,7 @@ namespace DiscordBot
                 .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime:HH:mm}", true)
                 .AddField("End", $"{timeTable.Time.EndTime:HH:mm}", true)
-                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll()}\n```")
+                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
                 .WithColor(Color.Green)
                 .WithTitle($"Nu: {timeTable.Subject}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -200,7 +200,7 @@ namespace DiscordBot
                 .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}")
                 .AddField("Start", $"{nextCourse.Time.StartTime:HH:mm}", true)
                 .AddField("End", $"{nextCourse.Time.EndTime:HH:mm}", true)
-                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll()}\n```")
+                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
                 .WithColor(Color.Red)
                 .WithTitle("Nu: Geen Les")
                 .WithFooter($"Last updated on: {DateTime.Now}")
