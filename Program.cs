@@ -13,7 +13,6 @@ using DiscordBot.Models;
 using DiscordBot.Models.Messages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Calendar = Ical.Net.Calendar;
 
 namespace DiscordBot
 {
@@ -44,7 +43,7 @@ namespace DiscordBot
                 .AddJsonFile(path: "config.json");
             _config = _builder.Build();
 
-            _taskList = new ICSDownloader().GetTaskList();
+            _taskList = new ICSDownloader().GetTaskList().ApplyBlacklist();
             _timeTables = new ICSConverter().GetTables();
 
             _timer = new Timer {AutoReset = false, Interval = GetInterval(int.Parse(_config["minutesToRefresh"])) };
@@ -57,13 +56,13 @@ namespace DiscordBot
         /// </summary>
         /// <param name="sender">the sender</param>
         /// <param name="e">Arguments<see cref="ElapsedEventArgs"/></param>
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+        private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             if(_messages.Count > 0)
                 foreach (Message message in _messages)
-                    Task.Run(() => EditMessageTask(message.ThisMessage));
+                    await EditMessageTask(message.ThisMessage);
 
-            _taskList = new ICSDownloader().GetTaskList();
+            _taskList = new ICSDownloader().GetTaskList().ApplyBlacklist();
             
             int countTasks = GetOnlyNewTasks().Count;
             if (taskCount == 0)
@@ -73,7 +72,7 @@ namespace DiscordBot
             }
             else if (countTasks > taskCount)
             {
-                SendMessageToChannelAsync(_taskList.GetLatestTask(_tasklistOld));
+                await SendMessageToChannelAsync(_taskList.GetLatestTask(_tasklistOld));
                 taskCount = countTasks;
                 _tasklistOld = _taskList;
             }
@@ -84,10 +83,11 @@ namespace DiscordBot
             _timer.Start();
         }
 
-        private void SendMessageToChannelAsync(Tasks task)
+        private async Task<RestUserMessage> SendMessageToChannelAsync(Tasks task)
         {
+            // 678954369764425728 => #les
             var channel = _client.GetChannel(678954369764425728) as SocketTextChannel;
-            channel.SendMessageAsync($"@here Nieuwe taak!! [{task.Course}] {task.Title} indienen op {task.EndTime:dd-MM-yyyy HH:mm}");
+            return await channel.SendMessageAsync($"@here **Nieuwe taak!!** [{task.Course}] {task.Title} indienen op {task.EndTime:dd-MM-yyyy HH:mm}");
         }
 
         /// <summary>
@@ -178,8 +178,8 @@ namespace DiscordBot
             return new EmbedBuilder()
                 .AddField("Teacher", timeTable.Teacher)
                 .AddField("Class Room", timeTable.ClassRoom)
-                .AddField("Start", $"{timeTable.Time.StartTime.Hour}:{timeTable.Time.StartTime.Minute:00}", true)
-                .AddField("End", $"{timeTable.Time.EndTime.Hour}:{timeTable.Time.EndTime.Minute::00}", true)
+                .AddField("Start", $"{timeTable.Time.StartTime:HH:mm}", true)
+                .AddField("End", $"{timeTable.Time.EndTime:HH:mm}", true)
                 .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll()}\n```")
                 .WithColor(Color.Green)
                 .WithTitle($"Nu: {timeTable.Subject}")
@@ -198,8 +198,8 @@ namespace DiscordBot
                 .AddField("Next Course", nextCourse.Subject)
                 .AddField("Class room", nextCourse.ClassRoom)
                 .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}")
-                .AddField("Start", $"{nextCourse.Time.StartTime.Hour}:{nextCourse.Time.StartTime.Minute:00}", true)
-                .AddField("End", $"{nextCourse.Time.EndTime.Hour}:{nextCourse.Time.EndTime.Minute:00}", true)
+                .AddField("Start", $"{nextCourse.Time.StartTime:HH:mm}", true)
+                .AddField("End", $"{nextCourse.Time.EndTime:HH:mm}", true)
                 .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll()}\n```")
                 .WithColor(Color.Red)
                 .WithTitle("Nu: Geen Les")

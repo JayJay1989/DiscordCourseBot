@@ -1,6 +1,13 @@
 ﻿{
   "minutesToRefresh": 1,
   "icalUrlTasks": "",
+  "exclude": [
+    "exploring",
+    "basic",
+    "database",
+    "programming advanced",
+    "basics"
+  ],
   "Token": "",
   "Prefix": ";"
 }

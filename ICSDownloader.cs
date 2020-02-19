@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DiscordBot.Models;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
@@ -15,8 +16,8 @@ namespace DiscordBot
         {
             taskList = new List<Tasks>();
             IConfiguration _config = Program.ThisProgram.GetConfig();
-            Calendar calendar = new Calendar().LoadFromUri(new Uri(_config["icalUrlTasks"]));
-            foreach (CalendarEvent calendarEvent in calendar.Events)
+            Task<Calendar> calendar = new Calendar().LoadFromUriAsync(new Uri(_config["icalUrlTasks"]));
+            foreach (CalendarEvent calendarEvent in calendar.Result.Events)
             {
                 taskList.Add(new Tasks
                 {

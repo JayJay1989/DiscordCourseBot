@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DiscordBot.Models;
 using Ical.Net;
+using Microsoft.Extensions.Configuration;
 
 namespace DiscordBot
 {
@@ -20,12 +21,12 @@ namespace DiscordBot
         public static async Task<Calendar> LoadFromUriAsync(this Calendar calendar, Uri uri)
         {
             using (var client = new HttpClient())
-            using (var response = await client.GetAsync(uri))
-            {
-                    response.EnsureSuccessStatusCode();
-                    var result = await response.Content.ReadAsStringAsync();
-                    return Calendar.Load(result);
-            }
+                using (var response = await client.GetAsync(uri))
+                {
+                        response.EnsureSuccessStatusCode();
+                        var result = await response.Content.ReadAsStringAsync();
+                        return Calendar.Load(result);
+                }
         }
 
         /// <summary>
@@ -37,12 +38,12 @@ namespace DiscordBot
         public static Calendar LoadFromUri(this Calendar calendar, Uri uri)
         {
             using (var client = new HttpClient())
-            using (var response = client.GetAsync(uri).Result)
-            {
-                response.EnsureSuccessStatusCode();
-                var result = response.Content.ReadAsStringAsync().Result;
-                return Calendar.Load(result);
-            }
+                using (var response = client.GetAsync(uri).Result)
+                {
+                    response.EnsureSuccessStatusCode();
+                    var result = response.Content.ReadAsStringAsync().Result;
+                    return Calendar.Load(result);
+                }
         }
 
         /// <summary>
@@ -53,6 +54,7 @@ namespace DiscordBot
         public static string ShowAll(this List<Tasks> taskList)
         {
             StringBuilder stringBuilder = new StringBuilder();
+            
             foreach (Tasks task in taskList)
             {
                 stringBuilder.Append($"- [{task.Course}] {task.Title} tenlaatste {task.EndTime:dd/MM/yyy HH:mm}\r\n");
@@ -64,7 +66,23 @@ namespace DiscordBot
 
         public static Tasks GetLatestTask(this List<Tasks> newList, List<Tasks> oldList)
         {
-            return newList.Where(tasks => !oldList.Contains(tasks)).First();
+            return newList.First(tasks => !oldList.Contains(tasks));
+        }
+
+        public static List<Tasks> ApplyBlacklist(this List<Tasks> taskList)
+        {
+            List<Tasks> retList = new List<Tasks>();
+            string[] excludeList = Program.ThisProgram.GetConfig().GetSection("exclude").AsEnumerable().Where(p => p.Value != null).Select(p => p.Value).ToArray();
+            foreach (Tasks task in taskList)
+            {
+                bool isValid = excludeList.All(bl => !task.Course.ToLower().Contains(bl));
+                if (isValid)
+                {
+                    retList.Add(task);
+                }
+            }
+
+            return retList;
         }
     }
 }
