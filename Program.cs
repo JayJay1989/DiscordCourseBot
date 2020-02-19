@@ -13,6 +13,7 @@ using DiscordBot.Models;
 using DiscordBot.Models.Messages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Calendar = Ical.Net.Calendar;
 
 namespace DiscordBot
 {
@@ -72,8 +73,7 @@ namespace DiscordBot
             }
             else if (countTasks > taskCount)
             {
-                Tasks result = _taskList.GetLatestTask(_tasklistOld);
-                Task.Run(() => SendMessageToChannelAsync(result));
+                SendMessageToChannelAsync(_taskList.GetLatestTask(_tasklistOld));
                 taskCount = countTasks;
                 _tasklistOld = _taskList;
             }
@@ -84,10 +84,10 @@ namespace DiscordBot
             _timer.Start();
         }
 
-        private async Task SendMessageToChannelAsync(Tasks task)
+        private void SendMessageToChannelAsync(Tasks task)
         {
             var channel = _client.GetChannel(678954369764425728) as SocketTextChannel;
-            await channel.SendMessageAsync($"@here Nieuwe taak!! [{task.Course}] {task.Title} indienen op {task.EndTime:dd-MM-yyyy HH:mm}");
+            channel.SendMessageAsync($"@here Nieuwe taak!! [{task.Course}] {task.Title} indienen op {task.EndTime:dd-MM-yyyy HH:mm}");
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace DiscordBot
             DateTime now = DateTime.Now;
             return ((60 - now.Second) * (1000 * interval) - now.Millisecond); //every minute
         }
-
+        
         /// <summary>
         /// Message Received
         /// </summary>
