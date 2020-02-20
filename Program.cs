@@ -108,7 +108,7 @@ namespace DiscordBot
         private Embed Calculate()
         {
             DateTime now = DateTime.Now;
-            IEnumerable<TimeTable> timeTable = _timeTables.Where((tt) => tt.Day == DateTime.Today);
+            IEnumerable<TimeTable> timeTable = _timeTables.FindAll((tt) => tt.Day == DateTime.Today);
             return getCurrenTimeTable(timeTable) == null ? CreateBlankEmbed() : CreateEmbed(getCurrenTimeTable(timeTable));
         }
 
@@ -123,11 +123,12 @@ namespace DiscordBot
             TimeTable ret = null;
             try
             {
-                ret = timeTables.Single(tt =>
-                    tt.Time.StartTime >= DateTime.Now && tt.Time.EndTime <= DateTime.Now);
+                //13:00 >= 13:40 && 16:30 <= 13:40
+                ret = timeTables.First(tt => DateTime.Now >= tt.Time.StartTime & DateTime.Now <= tt.Time.EndTime);
             }
             catch (Exception e)
             {
+                Console.WriteLine(e);
             }
             return ret;
         }
