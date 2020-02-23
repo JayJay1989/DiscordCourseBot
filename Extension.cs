@@ -57,6 +57,24 @@ namespace DiscordBot
             
             foreach (Tasks task in taskList)
             {
+                stringBuilder.Append($"+ [{task.Course}] {task.Title} tenlaatste {task.EndTime:dd/MM/yyy HH:mm}\r\n");
+            }
+
+            if (!taskList.Any()) stringBuilder.Append("No tasks");
+            return stringBuilder.ToString();
+        }
+
+        /// <summary>
+        /// Method to create a list of tasks
+        /// </summary>
+        /// <param name="taskList"></param>
+        /// <returns></returns>
+        public static string ShowAllPE(this List<Tasks> taskList)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (Tasks task in taskList)
+            {
                 stringBuilder.Append($"- [{task.Course}] {task.Title} tenlaatste {task.EndTime:dd/MM/yyy HH:mm}\r\n");
             }
 

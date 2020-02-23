@@ -63,8 +63,8 @@ namespace DiscordBot
                     await EditMessageTask(message.ThisMessage);
 
             _taskList = new ICSDownloader().GetTaskList().ApplyBlacklist();
-
-            int countTasks = GetOnlyNewTasks().Count;
+            
+            int countTasks = GetOnlyNewPETasks().Count;
             if (taskCount == 0)
             {
                 taskCount = countTasks;
@@ -181,8 +181,8 @@ namespace DiscordBot
                 .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime:HH:mm}", true)
                 .AddField("End", $"{timeTable.Time.EndTime:HH:mm}", true)
+                .AddField("Tasks PE:", $"```\n{GetOnlyNewPETasks().ShowAllPE().LimitMessage()}\n```")
                 .AddField("Reg. Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
-                .AddField("PE Tasks: ", $"```diff\n{GetOnlyNewPETasks().ShowAll().LimitMessage()}```")
                 .WithColor(Color.Green)
                 .WithTitle($"Nu: {timeTable.Subject}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -202,8 +202,8 @@ namespace DiscordBot
                 .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}")
                 .AddField("Start", $"{nextCourse.Time.StartTime:HH:mm}", true)
                 .AddField("End", $"{nextCourse.Time.EndTime:HH:mm}", true)
-                .AddField("Reg. Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
-                .AddField("PE Tasks: ", $"```diff\n{GetOnlyNewPETasks().ShowAll().LimitMessage()}```")
+                .AddField("Tasks PE:", $"```diff\n{GetOnlyNewPETasks().ShowAllPE().LimitMessage()}\n```")
+                .AddField("Reg. Tasks:", $"```diff\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
                 .WithColor(Color.Red)
                 .WithTitle("Nu: Geen Les")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -255,19 +255,29 @@ namespace DiscordBot
             return ret;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private List<Tasks> GetOnlyNewTasks()
         {
-            List<Tasks> ret = new List<Tasks>();
-            ret = _taskList.FindAll(t => t.EndTime >= DateTime.Today && !t.Title.Contains("PE"));
-            return ret;
+            List<Tasks> result = new List<Tasks>();
+            result = _taskList.FindAll(t => t.EndTime >= DateTime.Today && !t.Title.Contains("PE"));
+            return result;
         }
-
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private List<Tasks> GetOnlyNewPETasks()
         {
             List<Tasks> result = new List<Tasks>();
             result = _taskList.FindAll(t => t.EndTime >= DateTime.Today && t.Title.Contains("PE"));
             return result;
         }
+
+
 
         /// <summary>
         /// Ready
