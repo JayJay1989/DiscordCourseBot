@@ -36,7 +36,7 @@ namespace DiscordBot
         /// </summary>
         public Program()
         {
-            ThisProgram=this;
+            ThisProgram = this;
             _messages = new List<Message>();
             var _builder = new ConfigurationBuilder()
                 .SetBasePath(Environment.CurrentDirectory)
@@ -46,7 +46,7 @@ namespace DiscordBot
             _taskList = new ICSDownloader().GetTaskList().ApplyBlacklist();
             _timeTables = new ICSConverter().GetTables();
 
-            _timer = new Timer {AutoReset = false, Interval = GetInterval(int.Parse(_config["minutesToRefresh"])) };
+            _timer = new Timer { AutoReset = false, Interval = GetInterval(int.Parse(_config["minutesToRefresh"])) };
             _timer.Elapsed += Timer_Elapsed;
             _timer.Start();
         }
@@ -58,12 +58,12 @@ namespace DiscordBot
         /// <param name="e">Arguments<see cref="ElapsedEventArgs"/></param>
         private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if(_messages.Count > 0)
+            if (_messages.Count > 0)
                 foreach (Message message in _messages)
                     await EditMessageTask(message.ThisMessage);
 
             _taskList = new ICSDownloader().GetTaskList().ApplyBlacklist();
-            
+
             int countTasks = GetOnlyNewTasks().Count;
             if (taskCount == 0)
             {
@@ -108,7 +108,7 @@ namespace DiscordBot
         private Embed Calculate()
         {
             DateTime now = DateTime.Now;
-            IEnumerable<TimeTable> timeTable = _timeTables.Where((tt) => tt.Day == DateTime.Today);
+            IEnumerable<TimeTable> timeTable = _timeTables.FindAll((tt) => tt.Day == DateTime.Today);
             return getCurrenTimeTable(timeTable) == null ? CreateBlankEmbed() : CreateEmbed(getCurrenTimeTable(timeTable));
         }
 
@@ -123,11 +123,12 @@ namespace DiscordBot
             TimeTable ret = null;
             try
             {
-                ret = timeTables.Single(tt =>
-                    tt.Time.StartTime >= DateTime.Now && tt.Time.EndTime <= DateTime.Now);
+                //13:00 >= 13:40 && 16:30 <= 13:40
+                ret = timeTables.First(tt => DateTime.Now >= tt.Time.StartTime & DateTime.Now <= tt.Time.EndTime);
             }
             catch (Exception e)
             {
+                Console.WriteLine(e);
             }
             return ret;
         }
@@ -141,7 +142,7 @@ namespace DiscordBot
             DateTime now = DateTime.Now;
             return ((60 - now.Second) * (1000 * interval) - now.Millisecond); //every minute
         }
-        
+
         /// <summary>
         /// Message Received
         /// </summary>
@@ -150,11 +151,11 @@ namespace DiscordBot
         private async Task MessageReceivedAsync(SocketMessage messageParam)
         {
             var rMessage = (RestUserMessage)await messageParam.Channel.GetMessageAsync(messageParam.Id);
-            
+
             if (rMessage.Content == "!monitor" && !rMessage.Author.IsBot && rMessage.Author.Username.Contains("JayJay1989BE"))
             {
                 await rMessage.DeleteAsync();
-                var test = await messageParam.Channel.SendMessageAsync(embed:Calculate());
+                var test = await messageParam.Channel.SendMessageAsync(embed: Calculate());
                 if (!DoesItExist(test))
                 {
                     await AddMessage(test);
@@ -180,7 +181,8 @@ namespace DiscordBot
                 .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime:HH:mm}", true)
                 .AddField("End", $"{timeTable.Time.EndTime:HH:mm}", true)
-                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
+                .AddField("Reg. Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
+                .AddField("PE Tasks: ", $"```diff\n{GetOnlyNewPETasks().ShowAll().LimitMessage()}```")
                 .WithColor(Color.Green)
                 .WithTitle($"Nu: {timeTable.Subject}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -200,7 +202,8 @@ namespace DiscordBot
                 .AddField("Date", $"{nextCourse.Day:dd/MM/yyyy}")
                 .AddField("Start", $"{nextCourse.Time.StartTime:HH:mm}", true)
                 .AddField("End", $"{nextCourse.Time.EndTime:HH:mm}", true)
-                .AddField("Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
+                .AddField("Reg. Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
+                .AddField("PE Tasks: ", $"```diff\n{GetOnlyNewPETasks().ShowAll().LimitMessage()}```")
                 .WithColor(Color.Red)
                 .WithTitle("Nu: Geen Les")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -227,11 +230,11 @@ namespace DiscordBot
             List<TimeTable> ret = new List<TimeTable>();
             foreach (TimeTable timeTable in _timeTables)
             {
-                if(GetWeekNumber(timeTable.Day.Date).Equals(WeekNumber)) ret.Add(timeTable);
+                if (GetWeekNumber(timeTable.Day.Date).Equals(WeekNumber)) ret.Add(timeTable);
             }
             return ret;
         }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -255,8 +258,15 @@ namespace DiscordBot
         private List<Tasks> GetOnlyNewTasks()
         {
             List<Tasks> ret = new List<Tasks>();
-            ret = _taskList.FindAll(t => t.EndTime >= DateTime.Today);
+            ret = _taskList.FindAll(t => t.EndTime >= DateTime.Today && !t.Title.Contains("PE"));
             return ret;
+        }
+
+        private List<Tasks> GetOnlyNewPETasks()
+        {
+            List<Tasks> result = new List<Tasks>();
+            result = _taskList.FindAll(t => t.EndTime >= DateTime.Today && t.Title.Contains("PE"));
+            return result;
         }
 
         /// <summary>
@@ -297,7 +307,7 @@ namespace DiscordBot
         /// <returns><see cref="Task"/></returns>
         public async Task MainAsync()
         {
-            
+
             using (var services = ConfigureServices())
             {
                 var client = services.GetRequiredService<DiscordSocketClient>();
