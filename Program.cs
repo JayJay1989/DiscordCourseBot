@@ -167,6 +167,12 @@ namespace DiscordBot
                 //await rMessage.DeleteAsync();
                 await messageParam.Channel.SendMessageAsync(embed: Calculate());
             }
+
+            if (rMessage.Content == "!tasks")
+            {
+                await messageParam.Channel.SendMessageAsync("\nPE tasks:```diff\n" + GetOnlyNewPETasks().ShowAllPE() + "\n```\n" +
+                                                            "Reg. tasks:```diff"+GetOnlyNewTasks().ShowAll()+"```");
+            }
         }
 
         /// <summary>
