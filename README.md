@@ -16,3 +16,4 @@ This bot is made to serve the discord server for a college.
 - `;calendar <optional weeknumber>` => shows this weeks course calendar, or the provided weeknumber
 - `!lesrooster` => shows the embed
 - `!monitor` => refresh the replied embed every minute. (admin only)
+- `!tasks` => get all tasks
