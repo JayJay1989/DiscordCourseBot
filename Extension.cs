@@ -18,15 +18,26 @@ namespace DiscordBot
         /// <param name="calendar"></param>
         /// <param name="uri">the url</param>
         /// <returns><seealso cref="Calendar"/>Calendar</returns>
-        public static async Task<Calendar> LoadFromUriAsync(this Calendar calendar, Uri uri)
+        public static async Task<Calendar>? LoadFromUriAsync(this Calendar calendar, Uri uri)
         {
-            using (var client = new HttpClient())
-                using (var response = await client.GetAsync(uri))
-                {
-                        response.EnsureSuccessStatusCode();
-                        var result = await response.Content.ReadAsStringAsync();
-                        return Calendar.Load(result);
-                }
+            Calendar ret = null;
+            try
+            {
+                using (var client = new HttpClient())
+                    using (var response = await client.GetAsync(uri))
+                    {
+                            response.EnsureSuccessStatusCode();
+                            var result = await response.Content.ReadAsStringAsync();
+                            ret = Calendar.Load(result);
+                    }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            return ret;
         }
 
         /// <summary>

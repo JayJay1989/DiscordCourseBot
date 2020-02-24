@@ -13,6 +13,7 @@ using DiscordBot.Models;
 using DiscordBot.Models.Messages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace DiscordBot
 {
@@ -28,6 +29,7 @@ namespace DiscordBot
         private List<Tasks> _tasklistOld;
         private IConfiguration _config;
         static Timer _timer;
+        public ILogger Logger;
         public static Program ThisProgram;
         private int taskCount = 0;
 
@@ -36,6 +38,10 @@ namespace DiscordBot
         /// </summary>
         public Program()
         {
+            Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.File("log.txt")
+                .CreateLogger();
             ThisProgram = this;
             _messages = new List<Message>();
             var _builder = new ConfigurationBuilder()
@@ -43,7 +49,14 @@ namespace DiscordBot
                 .AddJsonFile(path: "config.json");
             _config = _builder.Build();
 
-            _taskList = new ICSDownloader().GetTaskList().ApplyBlacklist();
+            List<Tasks> resultCalendar = new ICSDownloader().GetTaskList().ApplyBlacklist();
+            if (resultCalendar == null)
+            {
+                Logger.Debug($"Failed to get calendar from url. got: {resultCalendar}");
+                return;
+            }
+
+            _taskList = resultCalendar;
             _timeTables = new ICSConverter().GetTables();
 
             _timer = new Timer { AutoReset = false, Interval = GetInterval(int.Parse(_config["minutesToRefresh"])) };
@@ -58,12 +71,18 @@ namespace DiscordBot
         /// <param name="e">Arguments<see cref="ElapsedEventArgs"/></param>
         private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
+            DateTime now = DateTime.Now;
             if (_messages.Count > 0)
                 foreach (Message message in _messages)
                     await EditMessageTask(message.ThisMessage);
 
-            _taskList = new ICSDownloader().GetTaskList().ApplyBlacklist();
-            
+            var calendarResult = new ICSDownloader().GetTaskList().ApplyBlacklist();
+            if (calendarResult == null)
+            {
+                Logger.Debug("CalendarResult was null, return");
+                return;
+            }
+            _taskList = calendarResult;
             int countTasks = GetOnlyNewPETasks().Count;
             if (taskCount == 0)
             {
@@ -81,6 +100,8 @@ namespace DiscordBot
             if (count > 0) SetBotTitle($"{count} {(count > 1 ? "taken" : "taak")} deze week");
             _timer.Interval = GetInterval(int.Parse(_config["minutesToRefresh"]));
             _timer.Start();
+            TimeSpan timeSpan = DateTime.Now - now;
+            Logger.Debug($"Timer_Elapsed: {timeSpan.Seconds} seconds");
         }
 
         private async Task<RestUserMessage> SendMessageToChannelAsync(Tasks task)
