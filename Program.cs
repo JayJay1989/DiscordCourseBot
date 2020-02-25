@@ -73,16 +73,22 @@ namespace DiscordBot
         {
             DateTime now = DateTime.Now;
             if (_messages.Count > 0)
+            {
                 foreach (Message message in _messages)
-                    await EditMessageTask(message.ThisMessage);
+                {
+                    if(message != null)
+                        await EditMessageTask(message.ThisMessage);
+                }
+            }
 
-            var calendarResult = new ICSDownloader().GetTaskList().ApplyBlacklist();
+
+            var calendarResult = new ICSDownloader().GetTaskList();
             if (calendarResult == null)
             {
                 Logger.Debug("CalendarResult was null, return");
                 return;
             }
-            _taskList = calendarResult;
+            _taskList = calendarResult.ApplyBlacklist();
             int countTasks = GetOnlyNewPETasks().Count;
             if (taskCount == 0)
             {
@@ -119,7 +125,14 @@ namespace DiscordBot
         private async Task EditMessageTask(RestUserMessage messageParam)
         {
             if (messageParam == null) return;
-            await messageParam.ModifyAsync(msg => msg.Embed = Calculate());
+            try
+            {
+                await messageParam.ModifyAsync(msg => msg.Embed = Calculate());
+            }
+            catch (Exception e)
+            {
+                Logger.Debug($"Error while editing message: {e.Message}");
+            }
         }
 
         /// <summary>
@@ -304,8 +317,6 @@ namespace DiscordBot
             return result;
         }
 
-
-
         /// <summary>
         /// Ready
         /// </summary>
@@ -357,16 +368,6 @@ namespace DiscordBot
                 await client.StartAsync();
                 await services.GetRequiredService<CommandHandler>().InitializeAsync();
                 await Task.Delay(-1);
-            }
-            string cki;
-            while (true)
-            {
-                cki = Console.ReadLine();
-                if (cki.ToLower().Equals("stop"))
-                {
-                    await _client.StopAsync();
-                    break;
-                }
             }
         }
 
