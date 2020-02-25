@@ -17,6 +17,12 @@ namespace DiscordBot
             taskList = new List<Tasks>();
             IConfiguration _config = Program.ThisProgram.GetConfig();
             Task<Calendar> calendar = new Calendar().LoadFromUriAsync(new Uri(_config["icalUrlTasks"]));
+            
+            if (calendar == null)
+            {
+                Program.ThisProgram.Logger.Debug($"Failed to get calendar, got: {calendar}");
+                return;
+            }
             foreach (CalendarEvent calendarEvent in calendar.Result.Events)
             {
                 taskList.Add(new Tasks
