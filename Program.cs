@@ -14,6 +14,7 @@ using DiscordBot.Models.Messages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace DiscordBot
 {
@@ -24,6 +25,7 @@ namespace DiscordBot
     {
         private DiscordSocketClient _client;
         private List<Message> _messages;
+        private List<Message> _markedMessages;
         private List<TimeTable> _timeTables;
         private List<Tasks> _taskList;
         private List<Tasks> _tasklistOld;
@@ -39,11 +41,11 @@ namespace DiscordBot
         public Program()
         {
             Logger = new LoggerConfiguration()
-                .WriteTo.Console()
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
                 .WriteTo.File("log.txt")
                 .CreateLogger();
             ThisProgram = this;
-            _messages = new List<Message>();
+            _messages = _markedMessages = new List<Message>();
             var _builder = new ConfigurationBuilder()
                 .SetBasePath(Environment.CurrentDirectory)
                 .AddJsonFile(path: "config.json");
@@ -52,7 +54,7 @@ namespace DiscordBot
             List<Tasks> resultCalendar = new ICSDownloader().GetTaskList().ApplyBlacklist();
             if (resultCalendar == null)
             {
-                Logger.Debug($"Failed to get calendar from url. got: {resultCalendar}");
+                Logger.Information($"Failed to get calendar from url. got: {resultCalendar}");
                 return;
             }
 
@@ -76,16 +78,22 @@ namespace DiscordBot
             {
                 foreach (Message message in _messages)
                 {
-                    if(message != null)
-                        await EditMessageTask(message.ThisMessage);
+                    await EditMessage(message.ThisMessage);
                 }
             }
 
+            if (_markedMessages.Count > 0)
+            {
+                foreach (Message markedMessage in _markedMessages)
+                {
+                    await RemoveMessage(markedMessage.ThisMessage);
+                }
+            }
 
             var calendarResult = new ICSDownloader().GetTaskList();
             if (calendarResult == null)
             {
-                Logger.Debug("CalendarResult was null, return");
+                Logger.Information("CalendarResult was null, return");
                 return;
             }
             _taskList = calendarResult.ApplyBlacklist();
@@ -107,7 +115,7 @@ namespace DiscordBot
             _timer.Interval = GetInterval(int.Parse(_config["minutesToRefresh"]));
             _timer.Start();
             TimeSpan timeSpan = DateTime.Now - now;
-            Logger.Debug($"Timer_Elapsed: {timeSpan.Seconds} seconds");
+            Logger.Information($"Timer_Elapsed: {timeSpan.Seconds} seconds");
         }
 
         private async Task<RestUserMessage> SendMessageToChannelAsync(Tasks task)
@@ -122,7 +130,7 @@ namespace DiscordBot
         /// </summary>
         /// <param name="messageParam">The original message  <see cref="RestUserMessage"/></param>
         /// <returns></returns>
-        private async Task EditMessageTask(RestUserMessage messageParam)
+        private async Task EditMessage(RestUserMessage messageParam)
         {
             if (messageParam == null) return;
             try
@@ -131,7 +139,20 @@ namespace DiscordBot
             }
             catch (Exception e)
             {
-                Logger.Debug($"Error while editing message: {e.Message}");
+                Logger.Information($"Error while editing message: {e.Message}");
+            }
+        }
+
+        private async Task RemoveMessage(RestUserMessage messageParam)
+        {
+            if (messageParam == null) return;
+            try
+            {
+                await messageParam.DeleteAsync();
+            }
+            catch (Exception e)
+            {
+                Logger.Information($"Error while removing message: {e.Message}");
             }
         }
 
@@ -154,17 +175,7 @@ namespace DiscordBot
         private TimeTable? getCurrenTimeTable(IEnumerable<TimeTable> timeTables)
         {
 
-            TimeTable ret = null;
-            try
-            {
-                //13:00 >= 13:40 && 16:30 <= 13:40
-                ret = timeTables.First(tt => DateTime.Now >= tt.Time.StartTime & DateTime.Now <= tt.Time.EndTime);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-            return ret;
+            return timeTables.FirstOrDefault(tt => DateTime.Now >= tt.Time.StartTime & DateTime.Now <= tt.Time.EndTime); ;
         }
 
         /// <summary>
@@ -189,10 +200,10 @@ namespace DiscordBot
             if (rMessage.Content == "!monitor" && !rMessage.Author.IsBot && rMessage.Author.Username.Contains("JayJay1989BE"))
             {
                 await rMessage.DeleteAsync();
-                var test = await messageParam.Channel.SendMessageAsync(embed: Calculate());
-                if (!DoesItExist(test))
+                var sentMessage = await messageParam.Channel.SendMessageAsync(embed: Calculate());
+                if (!DoesItExist(sentMessage))
                 {
-                    await AddMessage(test);
+                    await AddMessage(sentMessage);
                 }
             }
 
@@ -205,8 +216,11 @@ namespace DiscordBot
             if (rMessage.Content == "!tasks")
             {
                 await messageParam.Channel.SendMessageAsync("\nPE tasks:```diff\n" + GetOnlyNewPETasks().ShowAllPE() + "\n```\n" +
-                                                            "Reg. tasks:```diff"+GetOnlyNewTasks().ShowAll()+"```");
+                                                            "Reg. tasks:```diff\n" + GetOnlyNewTasks().ShowAll() + "```");
             }
+
+            // Remove message that contains an image or other attachment
+            if (rMessage.Attachments.Count > 0) await AddMarkedMessage(rMessage);
         }
 
         /// <summary>
@@ -221,8 +235,8 @@ namespace DiscordBot
                 .AddField("Class Room", timeTable.ClassRoom)
                 .AddField("Start", $"{timeTable.Time.StartTime:HH:mm}", true)
                 .AddField("End", $"{timeTable.Time.EndTime:HH:mm}", true)
-                .AddField("Tasks PE:", $"```\n{GetOnlyNewPETasks().ShowAllPE().LimitMessage()}\n```")
-                .AddField("Reg. Tasks:", $"```\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
+                .AddField("Tasks PE:", $"```diff\n{GetOnlyNewPETasks().ShowAllPE().LimitMessage()}\n```")
+                .AddField("Reg. Tasks:", $"```diff\n{GetOnlyNewTasks().ShowAll().LimitMessage()}\n```")
                 .WithColor(Color.Green)
                 .WithTitle($"Nu: {timeTable.Subject}")
                 .WithFooter($"Last updated on: {DateTime.Now}")
@@ -256,7 +270,7 @@ namespace DiscordBot
         /// <returns></returns>
         private TimeTable NextCourse()
         {
-            return _timeTables.First(tt => tt.Time.StartTime > DateTime.Now);
+            return _timeTables.FirstOrDefault(tt => tt.Time.StartTime > DateTime.Now);
         }
 
         /// <summary>
@@ -305,7 +319,7 @@ namespace DiscordBot
             result = _taskList.FindAll(t => t.EndTime >= DateTime.Today && !t.Title.Contains("PE"));
             return result;
         }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -397,6 +411,11 @@ namespace DiscordBot
                 return;
             }
             _messages.Add(new Message(message));
+        }
+
+        private async Task AddMarkedMessage(RestUserMessage markedMessage)
+        {
+            _markedMessages.Add(new Message(markedMessage));
         }
 
 
